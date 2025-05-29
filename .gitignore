@@ -2,3 +2,5 @@ musicas/*
 .venv/
 uv.lock
 .python-version
+input.txt*
+output.txt*
