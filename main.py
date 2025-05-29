@@ -1,7 +1,20 @@
 import yt_dlp
 import os
 from concurrent.futures import ThreadPoolExecutor
-import concurrent.futures # Importe aqui também para garantir
+import concurrent.futures
+import re 
+
+def sanitizar_nome_arquivo(nome):
+    """
+    Sanitiza um nome para ser usado como nome de arquivo ou pasta,
+    removendo caracteres especiais e limitando o tamanho.
+    """
+    # Remove caracteres inválidos para nomes de arquivo em Windows/Linux
+    nome_sanitizado = re.sub(r'[\\/:*?"<>|]', ' ', nome)
+    # Remove múltiplos espaços e espaços no início/fim
+    nome_sanitizado = re.sub(r'\s+', ' ', nome_sanitizado).strip()
+    # Limita o comprimento do nome para evitar problemas de caminho muito longo
+    return nome_sanitizado[:100]
 
 def baixar_musica(artista, musica, pasta_destino='musicas'):
     """
@@ -19,13 +32,17 @@ def baixar_musica(artista, musica, pasta_destino='musicas'):
     if not os.path.exists(pasta_destino):
         os.makedirs(pasta_destino)
     
-    # --- MODIFICAÇÃO AQUI ---
+    # Sanitizar o nome do artista antes de criar a pasta
+    artista_sanitizado = sanitizar_nome_arquivo(artista)
+    
     # Criar o caminho da pasta específica para o artista
-    pasta_artista = os.path.join(pasta_destino, artista)
+    pasta_artista = os.path.join(pasta_destino, artista_sanitizado)
     if not os.path.exists(pasta_artista):
         os.makedirs(pasta_artista)
-    # --- FIM DA MODIFICAÇÃO ---
     
+    # Sanitizar o nome da música para o nome do arquivo
+    musica_sanitizada = sanitizar_nome_arquivo(musica)
+
     # Configurar as opções do yt-dlp
     query = f"{artista} {musica} official audio"
     options = {
@@ -33,12 +50,10 @@ def baixar_musica(artista, musica, pasta_destino='musicas'):
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
-            'preferredquality': '96',
+            'preferredquality': '192', # Alterado para 192kbps para melhor qualidade, mas você pode mudar para 96 se preferir
         }],
-        # --- MODIFICAÇÃO AQUI ---
-        # Salvar o arquivo dentro da pasta do artista
-        'outtmpl': os.path.join(pasta_artista, f'{artista} - {musica}.%(ext)s'),
-        # --- FIM DA MODIFICAÇÃO ---
+        # Salvar o arquivo dentro da pasta do artista sanitizada
+        'outtmpl': os.path.join(pasta_artista, f'{artista_sanitizado} - {musica_sanitizada}.%(ext)s'),
         'quiet': True, 
         'no_warnings': True, 
         'ignoreerrors': True, 
@@ -110,4 +125,5 @@ if __name__ == "__main__":
     print("Certifique-se de ter um arquivo 'input.txt' com uma música por linha no formato:")
     print("Artista - Nome da Música\n")
     
+    # Exemplo de como usar a função com um número maior de workers
     processar_lista_musicas(max_workers=8)
