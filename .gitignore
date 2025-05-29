@@ -1,0 +1,4 @@
+musicas/
+.venv/
+uv.lock
+.python-version
